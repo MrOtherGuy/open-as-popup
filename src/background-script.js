@@ -67,20 +67,25 @@ async function setupIdentity(){
   if(!option.userContextEnabled){
     return null
   }
+
   try{
-    cid = await browser.contextualIdentities.get("OAP");
-  }catch(e){
-    // myext-container doesn't exist
-    try{
+    // throws if contextualIdentities is not available
+    let ids = await browser.contextualIdentities.query({name:"OAP"});
+    // if there is no identity names OAP, then create one
+    if(ids.length === 0){
       cid = await browser.contextualIdentities.create({
         name: "OAP",
         color: "purple",
         icon: "fence"
       })
-    }catch(e){
-      // contextualIdentities is not supported
+    }else{
+      cid = ids[0]
     }
+    
+  }catch(e){
+    // contextualIdentities is not supported
   }
+
   return cid
 }
 

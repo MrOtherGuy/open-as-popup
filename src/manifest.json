@@ -5,7 +5,7 @@
   "name": "Open Page As Popup",
   "permissions": ["activeTab","storage","cookies","contextualIdentities"],
   "optional_permissions": ["<all_urls>"],
-  "version": "0.1",
+  "version": "0.1.1",
   "icons":{
 		"48": "icon.svg"
 	},
