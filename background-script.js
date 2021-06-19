@@ -42,7 +42,7 @@ function defineBrowserAction(context){
       return
     }
     
-    let url = tab.url;
+    let url = null;
     try{
       let res = await browser.storage.local.get("url");
       if(res.url){
@@ -50,7 +50,7 @@ function defineBrowserAction(context){
       }
     }catch(e){
       // nothing
-      true
+      return
     }
     properties.url = url;
     let win = await browser.windows.create(properties);
@@ -62,6 +62,10 @@ function defineBrowserAction(context){
 
 async function setupIdentity(){
   let cid = null;
+  let option = await browser.storage.local.get(["userContextEnabled"]);
+  if(!option.userContextEnabled){
+    return null
+  }
   try{
     cid = await browser.contextualIdentities.get("myext-container");
   }catch(e){
