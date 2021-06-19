@@ -26,38 +26,39 @@ function handleMessage(request, sender, sendResponse) {
 browser.runtime.onMessage.addListener(handleMessage);
 
 
-function defineBrowserAction(context){
+
+browser.browserAction.onClicked.addListener(async (tab) => {
+  
   let properties = {
     type: "panel",
     height: 600,
     width: 600
   };
+  
+  if(newWindow.tab()){
+    browser.windows.update(newWindow.window(),{focused:true})
+    return
+  }
+  let context = await setupIdentity();
   if(context){
     properties.cookieStoreId = context.cookieStoreId;
   }
-  browser.browserAction.onClicked.addListener(async (tab) => {
-    
-    if(newWindow.tab()){
-      browser.windows.update(newWindow.window(),{focused:true})
+  try{
+    let res = await browser.storage.local.get("url");
+    if(res.url){
+      properties.url = res.url
+    }else{
       return
     }
-    
-    let url = null;
-    try{
-      let res = await browser.storage.local.get("url");
-      if(res.url){
-        url = res.url
-      }
-    }catch(e){
-      // nothing
-      return
-    }
-    properties.url = url;
-    let win = await browser.windows.create(properties);
-    newWindow.set(win)
-   
-  })
-}
+  }catch(e){
+    // nothing
+    return
+  }
+  
+  let win = await browser.windows.create(properties);
+  newWindow.set(win)
+ 
+})
 
 
 async function setupIdentity(){
@@ -67,12 +68,12 @@ async function setupIdentity(){
     return null
   }
   try{
-    cid = await browser.contextualIdentities.get("myext-container");
+    cid = await browser.contextualIdentities.get("OAP");
   }catch(e){
     // myext-container doesn't exist
     try{
       cid = await browser.contextualIdentities.create({
-        name: "myext-container",
+        name: "OAP",
         color: "purple",
         icon: "fence"
       })
@@ -124,5 +125,3 @@ browser.permissions.getAll()
 
 browser.windows.onRemoved.addListener(id=>(newWindow.window() === id && newWindow.reset()))
 
-setupIdentity()
-.then(defineBrowserAction)
