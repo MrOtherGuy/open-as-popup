@@ -3,9 +3,9 @@
   "author": "MrOtherGuy",
   "manifest_version": 2,
   "name": "Open Page As Popup",
-  "permissions": ["activeTab","storage","cookies","contextualIdentities"],
+  "permissions": ["activeTab","storage","cookies","contextualIdentities","sessions"],
   "optional_permissions": ["<all_urls>"],
-  "version": "0.1.1",
+  "version": "0.1.2",
   "icons":{
 		"48": "icon.svg"
 	},

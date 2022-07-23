@@ -9,25 +9,52 @@ const newWindow = new (function(){
   this.set = (win) => {
     _windowId = win.id;
     _tabId = win.tabs[0].id;
-  }
-  
+    return true
+  };
+  this.forget = async function(){
+    let infos = await browser.sessions.getRecentlyClosed({maxResults: 2});
+    for(let item of infos){
+      if(item.tab && item.tab.url === browser.runtime.getURL("helper-page.html")){
+        browser.sessions.forgetClosedTab(item.tab.windowId,item.tab.sessionId)
+      }else if (item.window){
+        browser.sessions.forgetClosedWindow(item.window.sessionId)
+      }
+    }
+  };
   this.reset = () => {
-    _windowId = null;
-    _tabId = null;
+    this.forget()
+    .then(()=>{
+      _windowId = null;
+      _tabId = null;
+    })
   }
-  
   return this
 })();
 
 function handleMessage(request, sender, sendResponse) {
   
-  request.tab && sendResponse({ match: newWindow.tab() === sender.tab.id });
+  if(request.tab){
+    sendResponse({ match: newWindow.tab() === sender.tab.id });
+  }else if(request.doButtonAction){
+    onButtonClicked()
+    .then(windowWasOpened => {
+      if(windowWasOpened){
+        browser.tabs.remove(sender.tab.id)
+        .then(newWindow.forget)
+        browser.windows.update(sender.tab.windowId,{state:"minimized"});
+      }
+    });
+  }else if(request.forget){
+    let win = newWindow.window();
+    if(win){
+      browser.windows.remove(win)
+    }
+  }
+  
 }
 browser.runtime.onMessage.addListener(handleMessage);
 
-
-
-browser.browserAction.onClicked.addListener(async (tab) => {
+async function onButtonClicked(){
   
   let properties = {
     type: "panel",
@@ -48,6 +75,7 @@ browser.browserAction.onClicked.addListener(async (tab) => {
     if(res.url){
       properties.url = res.url
     }else{
+      browser.runtime.openOptionsPage();
       return
     }
   }catch(e){
@@ -56,9 +84,11 @@ browser.browserAction.onClicked.addListener(async (tab) => {
   }
   
   let win = await browser.windows.create(properties);
-  newWindow.set(win)
+  return newWindow.set(win)
  
-})
+}
+
+browser.browserAction.onClicked.addListener( onButtonClicked )
 
 
 async function setupIdentity(){
@@ -122,8 +152,6 @@ const contentScriptStore = new (function(){
 
 
 browser.permissions.onAdded.addListener(contentScriptStore.newFromHosts);
-//browser.permissions.onRemoved.addListener(contentScriptStore.clear);
-
 
 browser.permissions.getAll()
 .then(contentScriptStore.newFromHosts)

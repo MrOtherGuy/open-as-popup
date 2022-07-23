@@ -6,14 +6,15 @@ function myAnchor(el,c){
   }
   return el instanceof HTMLAnchorElement ? el : myAnchor(el.parentNode,c--)
 }
-
+let processingClick = false;
 function tryOpenATab(ref){
-
   browser.runtime.sendMessage({tab: "I want it"})
   .then(response => {
+    
     if(response.match){
       window.open(ref,undefined,"noreferrer,noopener");
     }else{
+      processingClick = true;
       document.location.assign(ref)
     }
   })  
@@ -28,9 +29,13 @@ document.addEventListener("click",ev => {
       if(url.host != document.location.host){
         ev.preventDefault();
         tryOpenATab(anchor.href);
+      }else{
+        processingClick = true;
       }
     }catch(e){
       false
     }
   }
 })
+
+window.addEventListener("beforeunload",()=>(!processingClick&&window.close()),{once:true})
